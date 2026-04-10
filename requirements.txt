@@ -1,0 +1,13 @@
+beautifulsoup4
+requests
+pandas
+numpy
+scikit-learn
+nltk
+streamlit
+matplotlib
+seaborn
+wordcloud
+selenium
+pypdf2
+openpyxl
