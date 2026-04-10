@@ -51,7 +51,7 @@ def predict_sentiment_rule(text):
         return "Negative"
     return "Neutral"
 
-with st.expander("Upload CSV"):
+with st.expander("Data Input"):
     st.subheader("Data Input")
     input_method = st.radio("Choose data input method:", ["Search Amazon", "Upload Excel/CSV"])
     
@@ -121,19 +121,29 @@ with st.expander("Features"):
         X_ohe, X_bow, X_tfidf, ohe_vectorizer, bow_vectorizer, tfidf_vectorizer = build_features(st.session_state.df)
         option = st.selectbox("Choose feature type", ["OHE", "BoW", "TF-IDF"])
 
+        def highlight_cells(val):
+            color = "#bdd7ee" if val > 1 else "#c6efce" if val == 1 else "white"
+
+            return f"background-color: {color}"
+        
+         
         if option == "OHE":
             st.write("OHE Matrix shape:", X_ohe.shape)
             st.write("OHE stores binary presence/absence of words.")
             st.write("Example rows:")
             ohe_cols = ohe_vectorizer.get_feature_names_out()
-            st.write(pd.DataFrame(X_ohe.toarray()[:5], columns=ohe_cols))
+            #st.write(pd.DataFrame(X_ohe.toarray()[:5], columns=ohe_cols))
+            ohe_df = pd.DataFrame(X_ohe.toarray()[:5], columns=ohe_cols)
+            st.dataframe(ohe_df.style.map(highlight_cells))  # Highlight presence with colors
 
         elif option == "BoW":
             st.write("BoW Matrix shape:", X_bow.shape)
             st.write("BoW stores word counts.")
             st.write("Example rows:")
             bow_cols = bow_vectorizer.get_feature_names_out()
-            st.write(pd.DataFrame(X_bow.toarray()[:5], columns=bow_cols))
+            #st.write(pd.DataFrame(X_bow.toarray()[:5], columns=bow_cols))
+            bow_df = pd.DataFrame(X_bow.toarray()[:5], columns=bow_cols)
+            st.dataframe(bow_df.style.map(highlight_cells))  # Highlight presence with colors
 
         else:
             st.write("TF-IDF Matrix shape:", X_tfidf.shape)
@@ -151,6 +161,11 @@ with st.expander("Comparison"):
     st.subheader("Feature Comparison")
     if st.session_state.df is not None and "cleaned_text" in st.session_state.df.columns:
         X_ohe, X_bow, X_tfidf, ohe_vectorizer, bow_vectorizer, tfidf_vectorizer = build_features(st.session_state.df)
+        import numpy as np
+        sparsity_ohe = round((1 - X_ohe.nnz / (X_ohe.shape[0] * X_ohe.shape[1])) * 100, 2)
+        sparsity_bow = round((1 - X_bow.nnz / (X_bow.shape[0] * X_bow.shape[1])) * 100, 2)
+        sparsity_tfidf = round((1 - X_tfidf.nnz / (X_tfidf.shape[0] * X_tfidf.shape[1])) * 100, 2)
+
         comparison = pd.DataFrame({
             "Method": ["OHE", "BoW", "TF-IDF"],
             "Shape": [
@@ -159,11 +174,28 @@ with st.expander("Comparison"):
                 f"{X_tfidf.shape[0]} x {X_tfidf.shape[1]}"
             ],
             "Sparsity (%)": [
-                round((1 - X_ohe.nnz / (X_ohe.shape[0] * X_ohe.shape[1])) * 100, 2),
-                round((1 - X_bow.nnz / (X_bow.shape[0] * X_bow.shape[1])) * 100, 2),
-                round((1 - X_tfidf.nnz / (X_tfidf.shape[0] * X_tfidf.shape[1])) * 100, 2)
+                sparsity_ohe,
+                sparsity_bow,
+                sparsity_tfidf
+            ],  
+            "Non0zerocells": [
+                X_ohe.nnz,
+                X_bow.nnz,
+                X_tfidf.nnz
+            ],  
+            "Mean non-zero per row": [
+                round(X_ohe.nnz / X_ohe.shape[0], 2),
+                round(X_bow.nnz / X_bow.shape[0], 2),
+                round(X_tfidf.nnz / X_tfidf.shape[0], 2)
             ],
-            "Value type": ["Binary", "Counts", "Weights"],
+            "Max value": [
+                int(X_ohe.max()),
+                int(X_bow.max()),
+                int(X_tfidf.max())
+            ],  
+            "Value type": [
+                "Binary (0/1)", "Count (0,1,2,...)", "Weight (0.0 - 1.0)"
+            ],
             "Represents": [
                 "Word presence in a review",
                 "Word frequency per review",

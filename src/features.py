@@ -9,11 +9,11 @@ def build_features(df):
     vocab = vectorizer.get_feature_names_out()
     print(f"Vocabulary size: {len(vocab)}")
 
-    # Top 20 words
+    # Top 50 words
     word_freq = X.sum(axis=0).A1
-    top_idx = word_freq.argsort()[-20:][::-1]
+    top_idx = word_freq.argsort()[-50:][::-1]
     plt.barh([vocab[i] for i in top_idx], word_freq[top_idx])
-    plt.title("Top 20 frequent words")
+    plt.title("Top 50 frequent words")
     plt.show()
 
     # Feature matrices
